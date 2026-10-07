@@ -25,34 +25,17 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Extract portfolio ZIP
+        shell: bash
         run: |
-          # Find the portfolio ZIP file (handles spaces in filename)
-          ZIP_FILE=$(ls *.zip | head -n 1)
-          echo "Found ZIP: $ZIP_FILE"
-          # Extract to a temp folder
-          mkdir -p extracted
-          unzip -o "$ZIP_FILE" -d extracted
-          # Move extracted files to deployment folder
-          mkdir -p deploy
-          # If ZIP has a single root folder, use its contents; otherwise use extracted directly
-          if [ $(ls extracted | wc -l) -eq 1 ] && [ -d "extracted/$(ls extracted)" ]; then
-            cp -r "extracted/$(ls extracted)/"* deploy/
-            # Also copy hidden files/folders like .github, .nojekyll
-            cp -r "extracted/$(ls extracted)/".github deploy/ 2>/dev/null || true
-            cp "extracted/$(ls extracted)/.nojekyll" deploy/ 2>/dev/null || true
-          else
-            cp -r extracted/* deploy/
-            cp -r extracted/.github deploy/ 2>/dev/null || true
-            cp extracted/.nojekyll deploy/ 2>/dev/null || true
-          fi
-          echo "=== Deploy folder contents ==="
-          ls -la deploy/
-          # Verify index.html exists
-          if [ ! -f "deploy/index.html" ]; then
-            echo "ERROR: index.html not found after extraction!"
-            exit 1
-          fi
-          echo "index.html found, ready to deploy"
+          set -e
+          mkdir -p site_build
+          for z in *.zip; do
+            echo "Extracting: $z"
+            unzip -o "$z" -d site_build
+          done
+          echo "--- extracted files ---"
+          find site_build -maxdepth 2 -type f | head -30
+          test -f site_build/index.html || (echo "index.html missing!" && exit 1)
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -62,7 +45,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'deploy'
+          path: site_build
 
       - name: Deploy to GitHub Pages
         id: deployment
