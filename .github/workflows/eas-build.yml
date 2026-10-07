@@ -24,6 +24,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Extract portfolio ZIP
+        run: |
+          # Find the portfolio ZIP file (handles spaces in filename)
+          ZIP_FILE=$(ls *.zip | head -n 1)
+          echo "Found ZIP: $ZIP_FILE"
+          # Extract to a temp folder
+          mkdir -p extracted
+          unzip -o "$ZIP_FILE" -d extracted
+          # Move extracted files to deployment folder
+          mkdir -p deploy
+          # If ZIP has a single root folder, use its contents; otherwise use extracted directly
+          if [ $(ls extracted | wc -l) -eq 1 ] && [ -d "extracted/$(ls extracted)" ]; then
+            cp -r "extracted/$(ls extracted)/"* deploy/
+            # Also copy hidden files/folders like .github, .nojekyll
+            cp -r "extracted/$(ls extracted)/".github deploy/ 2>/dev/null || true
+            cp "extracted/$(ls extracted)/.nojekyll" deploy/ 2>/dev/null || true
+          else
+            cp -r extracted/* deploy/
+            cp -r extracted/.github deploy/ 2>/dev/null || true
+            cp extracted/.nojekyll deploy/ 2>/dev/null || true
+          fi
+          echo "=== Deploy folder contents ==="
+          ls -la deploy/
+          # Verify index.html exists
+          if [ ! -f "deploy/index.html" ]; then
+            echo "ERROR: index.html not found after extraction!"
+            exit 1
+          fi
+          echo "index.html found, ready to deploy"
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
@@ -32,8 +62,9 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: 'deploy'
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-
+        pages@v4
