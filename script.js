@@ -52,6 +52,47 @@
     cards.forEach(c => { c.hidden = !(f === 'all' || c.dataset.category === f); });
   }));
 
+
+  // Live Work slider (manual scroll/swipe + arrows + dots; optional auto-slide that stops on any interaction)
+  (() => {
+    const root = $('#liveSlider'); if (!root) return;
+    const track = $('.slider-track', root), slides = [...track.children];
+    const prev = $('.s-prev', root), next = $('.s-next', root), play = $('.s-play', root), dots = $('.s-dots', root);
+    let timer = null, userPaused = false, inView = false;
+    const perView = () => { const w = slides[0].getBoundingClientRect().width; return Math.max(1, Math.round(track.clientWidth / (w + 14))); };
+    const pages = () => Math.max(1, slides.length - perView() + 1);
+    const idx = () => Math.round(track.scrollLeft / (slides[1] ? slides[1].offsetLeft - slides[0].offsetLeft : 1));
+    const go = (i) => { const n = pages(); i = Math.max(0, Math.min(n - 1, i)); track.scrollTo({ left: slides[i].offsetLeft - slides[0].offsetLeft, behavior: 'smooth' }); };
+    const buildDots = () => {
+      dots.innerHTML = '';
+      for (let i = 0; i < pages(); i++) { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-label', 'Go to project ' + (i + 1)); b.addEventListener('click', () => { stop(true); go(i); }); dots.appendChild(b); }
+      sync();
+    };
+    const sync = () => {
+      const i = Math.min(idx(), pages() - 1);
+      [...dots.children].forEach((d, k) => { d.classList.toggle('on', k === i); d.setAttribute('aria-selected', String(k === i)); });
+      prev.disabled = i <= 0; next.disabled = i >= pages() - 1;
+    };
+    const tick = () => { const i = idx(); go(i >= pages() - 1 ? 0 : i + 1); };
+    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const start = () => { if (timer || userPaused || reduce || !inView) return; timer = setInterval(tick, 6000); };
+    const halt = () => { clearInterval(timer); timer = null; };
+    const stop = (permanent) => { halt(); if (permanent) { userPaused = true; setPlay(); } };
+    const setPlay = () => { play.textContent = userPaused ? 'Play' : 'Pause'; play.setAttribute('aria-label', userPaused ? 'Start auto-slide' : 'Pause auto-slide'); play.setAttribute('aria-pressed', String(userPaused)); };
+    prev.addEventListener('click', () => { stop(true); go(idx() - 1); });
+    next.addEventListener('click', () => { stop(true); go(idx() + 1); });
+    play.addEventListener('click', () => { userPaused = !userPaused; setPlay(); userPaused ? halt() : start(); });
+    track.addEventListener('scroll', () => requestAnimationFrame(sync), { passive: true });
+    track.addEventListener('keydown', e => { if (e.key === 'ArrowRight') { e.preventDefault(); stop(true); go(idx() + 1); } if (e.key === 'ArrowLeft') { e.preventDefault(); stop(true); go(idx() - 1); } });
+    ['pointerdown', 'touchstart', 'wheel'].forEach(ev => track.addEventListener(ev, () => stop(true), { passive: true }));
+    root.addEventListener('mouseenter', halt); root.addEventListener('mouseleave', start);
+    root.addEventListener('focusin', halt); root.addEventListener('focusout', start);
+    if ('IntersectionObserver' in window) new IntersectionObserver(en => { inView = en[0].isIntersecting; inView ? start() : halt(); }, { threshold: .35 }).observe(root);
+    window.addEventListener('resize', buildDots);
+    if (reduce) { userPaused = true; }
+    setPlay(); buildDots();
+  })();
+
   // Contact form -> WhatsApp
   $('#contactForm')?.addEventListener('submit', e => {
     e.preventDefault();
