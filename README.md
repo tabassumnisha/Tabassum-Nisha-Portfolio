@@ -8,5 +8,5 @@ Graphic Designer & Digital Creator · Built by Ride Bangla IT Team
 - assets/Tabassum-Nisha-CV.pdf — CV (Download CV বাটনে ডাউনলোড হয়)
 
 ## বসানো আছে (সব ছবি)
-about-portrait.jpg, tabassum-nisha-hero.webp, ridebangla-logo.png, certificate.png, logo-ridebangla, logo-it-team, logo-tools, logo-studio, work-together-banner.jpg, workspace-banner.jpg, share-cover.jpg
+about-portrait.jpg, tabassum-nisha-hero.webp, ridebangla-logo.png, certificate.png, logo-ridebangla, logo-it-team, logo-tools, logo-studio, nfc-card-front, nfc-card-back, work-together-banner.jpg, workspace-banner.jpg, share-cover.jpg
 
